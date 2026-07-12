@@ -1,0 +1,33 @@
+# Terraform
+**/.terraform/*
+*.tfstate
+*.tfstate.*
+*.tfvars
+crash.log
+override.tf
+override.tf.json
+
+# Packer
+packer_cache/
+*.pkrvars.hcl
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+venv/
+*.egg-info/
+
+# Vector store / model artifacts (regenerate, don't commit)
+ai-assistant/chroma_db/
+*.gguf
+*.safetensors
+
+# Local secrets
+.env
+*.pem
+kubeconfig*
+ansible/inventory.ini
+
+# OS
+.DS_Store

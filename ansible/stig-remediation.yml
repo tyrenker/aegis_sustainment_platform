@@ -1,0 +1,42 @@
+# TODO (Phase 2, steps 1-3): your STIG remediation tasks go here.
+#
+# Before writing a single task:
+#   1. Download the real RHEL 9 STIG from public.cyber.mil/stigs/downloads. Read the actual rule
+#      text for a handful of rules, not just a summary.
+#   2. Baseline-scan a plain VM with OpenSCAP against the STIG profile, zero hardening applied.
+#      Read at least 20 individual failed findings.
+#   3. Pick 10-15 findings you understand. For EACH one: fix it by hand on the VM first, confirm
+#      the specific finding clears on rescan, THEN write the Ansible task below that does the
+#      same fix. One at a time — if ten run at once and something breaks, you won't know which
+#      one did it.
+#
+# Categories to pull your 10-15 from (don't do all of these, pick a representative subset):
+#   - SSH hardening (disable root login, disable password auth)
+#   - Password policy (minimum length, complexity, history)
+#   - auditd rules (what gets logged)
+#   - Disabling unused/legacy services
+#   - SELinux enforcing mode
+#
+# --- start writing your play below ---
+
+- name: RHEL 9 STIG remediation
+  hosts: all
+  become: true
+  tasks:
+    - name: "SV-257782 - Install and enable rngd (hardware RNG entropy gatherer)"
+      tags: [SV-257782, low]
+      block:
+        - name: Install rng-tools package
+          ansible.builtin.dnf:
+            name: rng-tools
+            state: present
+
+        - name: Enable and start rngd service
+          ansible.builtin.systemd:
+            name: rngd
+            enabled: true
+            state: started
+
+    # - name: <what this task does and which STIG finding it clears>
+    #   <module>:
+    #     ...

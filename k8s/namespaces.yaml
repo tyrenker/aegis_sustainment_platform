@@ -1,0 +1,12 @@
+# TODO (Phase 3): decide your namespace strategy before writing manifests into k8s/inventory/,
+# k8s/comms/, k8s/ai-assistant/.
+#
+# The bible (1.4) frames namespaces as a way to logically partition one cluster so you can apply
+# different access/policy rules to different groups of workloads — think about whether
+# inventory/comms/ai-assistant need different rules before just giving each one its own
+# namespace by default.
+
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: TODO

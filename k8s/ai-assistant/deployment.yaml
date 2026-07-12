@@ -1,0 +1,12 @@
+# TODO (Phase 7): the AI assistant deployment.
+#
+# This runs as a regular pod on your normal EKS node group — no GPU required (that phase was
+# descoped since there's no GPU hardware available; a small/quantized model on CPU is slower but
+# fully sufficient for demonstrating the RAG pipeline and Phase 9's red-team work).
+#
+# Requirements to include:
+#   - a longer startup/readiness probe timeout than a typical web app — model loading takes a
+#     while, and Kubernetes will kill and restart a pod that fails its startup probe too early
+#   - its own ServiceAccount for SPIRE attestation, same as inventory/comms
+#
+# Point the container image at whatever you build from ../ai-assistant/Dockerfile.

@@ -1,0 +1,38 @@
+# TODO (Phase 3, step 4): write this Rego policy yourself.
+#
+# Start here, get the syntax wrong, fix it, until it actually works against a test manifest —
+# per the bible, writing your own admission-control policy (not installing someone else's
+# bundle) is the clearest demonstration you understand policy-as-code.
+#
+# Goal: a ConstraintTemplate + Constraint pair that denies any pod spec with
+# securityContext.privileged: true.
+#
+# Reference: open-policy-agent.github.io/gatekeeper/website/docs/howto
+#
+# Break-it exercise: deploy a deliberately privileged pod and confirm this rejects it BEFORE it
+# ever reaches a node.
+
+apiVersion: templates.gatekeeper.sh/v1
+kind: ConstraintTemplate
+metadata:
+  name: TODO
+spec:
+  crd:
+    spec:
+      names:
+        kind: TODO
+  targets:
+    - target: admission.k8s.gatekeeper.sh
+      rego: |
+        package TODO
+        # write your violation rule here
+---
+apiVersion: constraints.gatekeeper.sh/v1beta1
+kind: TODO
+metadata:
+  name: TODO
+spec:
+  match:
+    kinds:
+      - apiGroups: [""]
+        kinds: ["Pod"]

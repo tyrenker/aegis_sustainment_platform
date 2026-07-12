@@ -1,0 +1,23 @@
+# Phase 4 boilerplate — the Application shape itself is fine to use as-is (this is you
+# configuring ArgoCD, not writing new logic). Fill in your actual repo URL below.
+#
+# Before turning on automated sync, do the "prove it, don't just trust it" step from the bible:
+# get this synced manually first, then kubectl edit something live without touching Git and watch
+# ArgoCD detect and revert the drift. Only after you've seen that, flip syncPolicy to automated.
+
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: aegis-platform
+  namespace: argocd
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/TODO-your-username/aegis-sustainment-platform.git
+    targetRevision: main
+    path: k8s
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: default
+  syncPolicy: {} # TODO: leave empty (manual sync) until you've proven the drift-revert behavior,
+                 # then set to `automated: {}`

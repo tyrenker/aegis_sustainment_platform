@@ -1,0 +1,37 @@
+# TODO (Phase 5): build this incrementally, one gate at a time — understand what each scanner
+# actually checks before adding the next. Don't paste in a complete pipeline in one shot.
+#
+# Decisions you need to make and be ready to explain:
+#   - fail threshold for the image scan (CRITICAL only? CRITICAL+HIGH?)
+#   - whether branch protection actually requires these checks before merge (a gate that only
+#     prints a warning nobody reads isn't a gate, it's decoration)
+#
+# Break-it exercise: in a test branch, introduce exactly the mistake each gate should catch (an
+# open security group, a CVE-laden base image, a policy-violating manifest) and confirm the
+# pipeline blocks the merge before fixing it.
+
+name: ci
+on: pull_request
+
+jobs:
+  terraform-gate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: hashicorp/setup-terraform@v3
+      - run: terraform -chdir=terraform fmt -check
+      - run: terraform -chdir=terraform validate
+      # TODO: add checkov or tfsec here
+
+  image-gate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      # TODO: docker build the ai-assistant image
+      # TODO: scan it with trivy or grype, pick and justify your fail threshold
+
+  policy-gate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      # TODO: run conftest against k8s/ using the policies in policy/

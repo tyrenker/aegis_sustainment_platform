@@ -1,0 +1,14 @@
+# TODO (Phase 3, step 2 / Phase 6): placeholder "inventory" service.
+#
+# This can be a trivial container (e.g., a simple echo/HTTP server) — its job in this project is
+# to exist as one half of the comms -> inventory mTLS relationship you enforce in Phase 6, not to
+# be a real inventory system.
+#
+# Required by the Phase 3 kube-bench findings you fix:
+#   - runAsNonRoot: true / do not run as root
+#   - drop unnecessary Linux capabilities
+#   - resource requests/limits set (cpu + memory)
+#   - no privileged mode
+#
+# Required by Phase 6: a distinct ServiceAccount for this workload (SPIRE attestation keys off
+# namespace + service account) — don't reuse the default service account.

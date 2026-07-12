@@ -1,0 +1,5 @@
+# TODO (Phase 3, step 2 / Phase 6): placeholder "comms" service.
+#
+# Same requirements as k8s/inventory/deployment.yaml — non-root, resource limits, no privileged
+# mode, its own ServiceAccount. This is the service that SHOULD be able to reach `inventory` over
+# mTLS once Phase 6's SPIRE authorization policy is in place; everything else should be denied.
