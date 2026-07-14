@@ -1,3 +1,5 @@
+# Stock upstream RHEL 9 — no longer used by STIG_test_vm below, kept only as a reference for
+# what Packer's own source_ami_filter builds from.
 data "aws_ami" "rhel9" {
   most_recent = true
   owners      = ["309956199498"]
@@ -10,6 +12,19 @@ data "aws_ami" "rhel9" {
   filter {
     name   = "virtualization-type"
     values = ["hvm"]
+  }
+}
+
+# Phase 2 step 5: the actual AMI Packer baked (name set in packer/rhel9-stig.pkr.hcl's
+# ami_name). Launching from this instead of the stock AMI is the real proof that hardening
+# persists into a brand-new instance automatically, not just the VM you hand-fixed.
+data "aws_ami" "aegis_hardened" {
+  most_recent = true
+  owners      = ["self"]
+
+  filter {
+    name   = "name"
+    values = ["aegis-rhel9-stig-*"]
   }
 }
 
@@ -40,7 +55,7 @@ resource "aws_security_group" "stig_test_ssh" {
 }
 
 resource "aws_instance" "STIG_test_vm" {
-  ami                         = data.aws_ami.rhel9.id
+  ami                         = data.aws_ami.aegis_hardened.id
   instance_type               = "t3.micro"
   key_name                    = "aegis-lab"
   subnet_id                   = aws_subnet.public[0].id

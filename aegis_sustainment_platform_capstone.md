@@ -450,6 +450,13 @@ the folder layout below.
    VPC — you want the mechanics of the loop to already be familiar before adding security logic on
    top of it.
 
+### Files to create / modify
+| File | Status | What to do |
+|------|--------|------------|
+| `terraform/main.tf` | ✅ Exists | Write `terraform` and `provider` blocks (already done) |
+| `terraform/variables.tf` | ✅ Exists | Define shared variables (region, tags, etc.) |
+| `.gitignore` | ✅ Exists | Ensure `.terraform/`, `*.tfstate*` are excluded |
+
 ### Common misconceptions
 - Thinking `terraform apply` is a "preview" — it makes real API calls against real AWS resources
   that cost money and can affect anything already running. `plan` previews; `apply` acts.
@@ -497,6 +504,17 @@ configuration that satisfies each one.
 ### Understanding checkpoint
 For 3 of your chosen controls, explain exactly which piece of AWS configuration satisfies each
 one and why — not "IAM handles access control" in general, but the specific policy/setting.
+
+### Files to create / modify
+| File | Status | What to do |
+|------|--------|------------|
+| `terraform/vpc.tf` | ✅ Exists | Fill in VPC, subnets (public/private), route tables, NAT/IGW |
+| `terraform/iam.tf` | ✅ Exists | Fill in least-privilege IAM roles & policies (cluster admin, auditor) |
+| `terraform/variables.tf` | ✅ Exists | Add VPC CIDR, subnet CIDRs, tags, etc. |
+| `terraform/output.tf` | ✅ Exists | Output VPC ID, subnet IDs, role ARNs |
+| `terraform/terraform.tfvars` | ✅ Exists | Set actual variable values for your environment |
+| `docs/nist_800-171_control_mapping.md` | ✅ Exists | Fill in your ~15-20 chosen controls mapped to specific AWS configs |
+| `docs/compliance_scorer.py` | ✅ Exists | Write boto3 checks for Phase 1 controls (IAM, VPC, SG) |
 
 ### Common misconceptions
 - "IAM policies are additive, so more policies = more permissions, simple." Not quite — an
@@ -586,6 +604,15 @@ Explain why baking hardening into the AMI is different from (and better than) ma
 one running server. What happens under your STIG-as-code approach when EKS launches a 5th node
 next week that you never touched by hand?
 
+### Files to create / modify
+| File | Status | What to do |
+|------|--------|------------|
+| `packer/rhel9-stig.pkr.hcl` | ✅ Exists | Fill in Packer template (source AMI filter, provisioner calling Ansible) |
+| `ansible/stig-remediation.yml` | ✅ Exists | Fill in 10-15 STIG remediation tasks (SSH hardening, auditd, password policy, etc.) |
+| `ansible/ansible.cfg` | ✅ Exists | Ansible configuration (remote user, roles path) |
+| `ansible/inventory.ini.example` | ✅ Exists | Example inventory for testing against live EC2 |
+| `docs/stig_scan_commands.md` | ✅ Exists | Document the OpenSCAP scan commands used for before/after reports |
+
 ### Common misconceptions
 - Thinking a compliance percentage (e.g., "92% compliant") is the goal. The goal is understanding
   *which* findings you remediated and why each one matters — a high score you can't explain is
@@ -650,6 +677,18 @@ Explain the difference between what `kube-bench` checks (cluster/node configurat
 time scan) versus what Falco checks (runtime behavior, continuous) versus what your OPA policies
 check (a manifest, before it's ever applied). Three different tools, three different points in
 time — if you can't articulate why you need all three, revisit 1.6.
+
+### Files to create / modify
+| File | Status | What to do |
+|------|--------|------------|
+| `terraform/eks.tf` | ✅ Exists | Fill in `aws_eks_cluster` and `aws_eks_node_group` resources (reference Phase 2 AMI) |
+| `k8s/namespaces.yaml` | ✅ Exists | Define namespaces for inventory, comms, ai-assistant |
+| `k8s/gatekeeper/no-privileged-pods.yaml` | ✅ Exists | Fill in ConstraintTemplate + Constraint for denying privileged pods |
+| `k8s/gatekeeper/require-resource-limits.yaml` | ✅ Exists | Fill in Constraint for requiring CPU/memory limits |
+| `policy/no_privileged.rego` | ✅ Exists | Fill in OPA Rego policy — deny privileged containers |
+| `policy/require_resource_limits.rego` | ✅ Exists | Fill in OPA Rego policy — deny pods without resource limits |
+| `k8s/falco/` | 🆕 Create | Directory for Falco Helm values or custom rules YAML |
+| `k8s/falco/values.yaml` | 🆕 Create | Falco Helm chart values (custom rules, output config) |
 
 ### Break-it exercise
 Deploy a deliberately privileged pod and confirm your Gatekeeper policy rejects it before it ever
@@ -720,6 +759,11 @@ Git repo, with a demonstrated case of it reverting a manual out-of-band change.
 ### Understanding checkpoint
 Explain precisely what breaks the "Git and the cluster always match" guarantee, and how ArgoCD
 detects and responds when that happens.
+
+### Files to create / modify
+| File | Status | What to do |
+|------|--------|------------|
+| `k8s/argocd/application.yaml` | ✅ Exists | Fill in ArgoCD Application manifest pointing to your repo's `k8s/` path |
 
 ### Common misconceptions
 - "I have my YAML in a Git repo" is not the same as GitOps — the defining feature is the
@@ -799,6 +843,12 @@ shot.
    gate should catch (an open security group, a CVE-laden base image, a policy-violating
    manifest), confirm the pipeline blocks the merge, then fix and confirm it passes.
 
+### Files to create / modify
+| File | Status | What to do |
+|------|--------|------------|
+| `.github/workflows/ci.yml` | ✅ Exists | Fill in three CI jobs: terraform-gate, image-gate, policy-gate |
+| `ai-assistant/Dockerfile` | ✅ Exists | Ensure it builds cleanly for the image-gate scan |
+
 ### Understanding checkpoint
 For each of the three gates, explain what class of mistake it catches that the *other two* would
 not. If you can't distinguish them clearly, revisit 1.6 before moving on — this distinction is a
@@ -852,6 +902,15 @@ service.
    deliberately stand up a third, unregistered mock service and try to call `inventory` from it —
    confirm it's rejected, and be able to explain the exact mechanism (missing/invalid SVID) that
    caused the rejection.
+
+### Files to create / modify
+| File | Status | What to do |
+|------|--------|------------|
+| `k8s/spire/register-services.sh` | ✅ Exists | Fill in SPIRE registration entry commands for each service |
+| `k8s/spire/authz-policy.md` | ✅ Exists | Document the authorization policy (comms → inventory only) |
+| `k8s/inventory/deployment.yaml` | ✅ Exists | Update to mount SPIRE agent socket, configure mTLS sidecar/SDK |
+| `k8s/comms/deployment.yaml` | ✅ Exists | Update to mount SPIRE agent socket, configure mTLS sidecar/SDK |
+| `k8s/spire/spire-values.yaml` | 🆕 Create | Helm values for SPIRE server + agent deployment |
 
 ### Understanding checkpoint
 Explain, specifically, why "this request came from inside our cluster" is a weaker guarantee than
@@ -925,6 +984,17 @@ second, simpler capability calling AWS Bedrock, both working end to end.
    applied here). Write the `boto3` `bedrock-runtime` call yourself — it's a single API call (send
    a prompt, get a completion), not an application framework.
 
+### Files to create / modify
+| File | Status | What to do |
+|------|--------|------------|
+| `ai-assistant/ingest.py` | ✅ Exists | Fill in document ingestion logic (read, chunk, embed, store in ChromaDB) |
+| `ai-assistant/app.py` | ✅ Exists | Fill in RAG retrieval + generation endpoint (embed query, retrieve, prompt, respond) |
+| `ai-assistant/bedrock_summarize.py` | ✅ Exists | Fill in Bedrock `invoke_model` call for log/incident summarization |
+| `ai-assistant/requirements.txt` | ✅ Exists | Ensure dependencies listed (sentence-transformers, chromadb, boto3, flask, etc.) |
+| `ai-assistant/Dockerfile` | ✅ Exists | Ensure it packages the app + model correctly |
+| `ai-assistant/corpus/` | ✅ Exists | Write 10-20 fake logistics/maintenance SOP documents |
+| `k8s/ai-assistant/deployment.yaml` | ✅ Exists | Fill in Deployment + Service manifest (resource limits, startup probe) |
+
 ### Understanding checkpoint
 Explain the actual tradeoff between the self-hosted model and Bedrock — specifically how data
 handling, cost model, and latency differ between them, and when you'd choose one over the other
@@ -962,6 +1032,12 @@ rather than just its earliest layer.
 2. **Re-run CloudTrail/Config/GuardDuty/Security Hub** across the now-larger environment and
    confirm they cover the new resources — don't assume; check that a Config rule you defined
    against your original baseline actually applies to the new EKS-related resources too.
+
+### Files to create / modify
+| File | Status | What to do |
+|------|--------|------------|
+| `docs/compliance_scorer.py` | ✅ Exists | Extend with new checks: EKS logging, STIG AMI verification, Bedrock logging |
+| `docs/nist_800-171_control_mapping.md` | ✅ Exists | Update mapping to cover EKS, AI, and Bedrock resources |
 
 ---
 
@@ -1005,6 +1081,14 @@ finding it, exploiting it, and fixing it yourself.
    for the attack patterns you just demonstrated — this is the same detection-engineering skill
    you already have from your CTI background, applied to a new log source.
 
+### Files to create / modify
+| File | Status | What to do |
+|------|--------|------------|
+| `ai-assistant/mitigations.py` | ✅ Exists | Fill in input sanitization, prompt-delimiter logic, suspicious-pattern filter |
+| `docs/red_team_log_template.md` | ✅ Exists | Fill in attack payloads, results, ATLAS/OWASP mappings |
+| `ai-assistant/corpus/` (poisoned doc) | ✅ Exists | Add a deliberately poisoned document for indirect injection testing |
+| `docs/sigma_rules/` | 🆕 Create (optional) | Sigma detection rules for prompt injection patterns in logs |
+
 ### Understanding checkpoint
 Explain exactly which sentence in your poisoned document triggered the model, and why the
 retrieval pipeline handed it over as trusted context rather than flagging it as untrusted external
@@ -1022,6 +1106,12 @@ attempt to bypass the Zero Trust policy between services, and run your AI inject
 in the same pass — and confirm each control (Config/GuardDuty/Security Hub, OPA/Gatekeeper, Falco,
 SPIRE policy, AI mitigations) independently catches its respective failure.
 
+### Files to create / modify
+| File | Status | What to do |
+|------|--------|------------|
+| No new files | — | This phase re-runs existing tests across all layers in one combined session |
+| `docs/break-it-validation-log.md` | 🆕 Create | Document combined break-it session results |
+
 ---
 
 ## Phase 11 — Write-up
@@ -1030,6 +1120,13 @@ your DoD Zero Trust pillar mapping, your MITRE ATLAS/OWASP LLM Top 10 mapping fo
 assistant, and the findings/remediation log from Phase 10. This document is what you actually walk
 an interviewer through — it should let you narrate the entire platform end to end, in your own
 words, without needing your code open.
+
+### Files to create / modify
+| File | Status | What to do |
+|------|--------|------------|
+| `docs/architecture_writeup_template.md` | ✅ Exists | Fill in the full architecture narrative (diagram, control mappings, findings) |
+| `docs/nist_800-171_control_mapping.md` | ✅ Exists | Finalize — ensure all controls are mapped to implemented configs |
+| `docs/red_team_log_template.md` | ✅ Exists | Finalize — clean up for interview-ready presentation |
 
 ### Composite resume bullet draft
 "Designed and built Aegis Sustainment Platform, an AWS/Kubernetes platform for a DoD-style
