@@ -37,6 +37,220 @@
             enabled: true
             state: started
 
+    - name: "SV-257786 - Disable debug-shell systemd service"
+      tags: [SV-257786, medium]
+      block:
+        - name: Disable and stop debug-shell service
+          ansible.builtin.systemd:
+            name: debug-shell.service
+            enabled: false
+            state: stopped
+        - name: Mask debug-shell service
+          ansible.builtin.systemd:
+            name: debug-shell.service
+            masked: true
+
+    - name: "SV-257784 - Disable Ctrl-Alt-Delete burst key sequence"
+      tags: [SV-257784, high]
+      block:
+        - name: Create systemd drop-in directory
+          ansible.builtin.file:
+            path: /etc/systemd/system.conf.d
+            state: directory
+            mode: '0755'
+
+        - name: Set CtrlAltDelBurstAction=none
+          ansible.builtin.copy:
+            dest: /etc/systemd/system.conf.d/55-CtrlAltDel-BurstAction.conf
+            content: |
+              [Manager]
+              CtrlAltDelBurstAction=none
+            mode: '0644'
+          notify: reload systemd daemon
+
+    - name: "SV-257792 - Disable virtual system calls"
+      tags: [SV-257792, medium]
+      block:
+        - name: Add vsyscall=none to all kernel boot entries
+          ansible.builtin.command:
+            cmd: grubby --update-kernel=ALL --args="vsyscall=none"
+          register: grubby_result
+          changed_when: grubby_result.rc == 0
+
+        - name: Persist vsyscall=none in /etc/default/grub
+          ansible.builtin.lineinfile:
+            path: /etc/default/grub
+            regexp: '^GRUB_CMDLINE_LINUX='
+            line: 'GRUB_CMDLINE_LINUX="vsyscall=none"'
+
+    - name: "SV-257814 - Disable core dumps for all users"
+      tags: [SV-257814, medium]
+      block:
+        - name: Set hard core limit to 0
+          ansible.builtin.copy:
+            dest: /etc/security/limits.d/99-disable-coredumps.conf
+            content: |
+              * hard core 0
+            mode: '0644'
+
+    - name: "SV-257939 - Set nftables as firewalld backend for DoS rate-limiting"
+      tags: [SV-257939, medium]
+      block:
+        - name: Install firewalld
+          ansible.builtin.dnf:
+            name: firewalld
+            state: present
+
+        - name: Enable and start firewalld
+          ansible.builtin.systemd:
+            name: firewalld
+            enabled: true
+            state: started
+
+        - name: Set FirewallBackend to nftables
+          ansible.builtin.lineinfile:
+            path: /etc/firewalld/firewalld.conf
+            regexp: '^#?FirewallBackend='
+            line: 'FirewallBackend=nftables'
+          notify: restart firewalld
+
+    - name: "SV-258084 - Require reauthentication when using sudo"
+      tags: [SV-258084, medium]
+      block:
+        - name: Set sudo timestamp_timeout to 0
+          ansible.builtin.copy:
+            dest: /etc/sudoers.d/99-timestamp-timeout
+            content: |
+              Defaults timestamp_timeout=0
+            mode: '0440'
+            validate: /usr/sbin/visudo -cf %s
+
+    - name: "SV-258094 - Disallow blank or null passwords"
+      tags: [SV-258094, high]
+      block:
+        - name: Enable without-nullok feature in authselect
+          ansible.builtin.command:
+            cmd: authselect enable-feature without-nullok
+          register: nullok_result
+          changed_when: "'already enabled' not in nullok_result.stdout"
+          failed_when:
+            - nullok_result.rc != 0
+            - "'already enabled' not in nullok_result.stdout"
+
+    - name: "SV-258107 - Enforce minimum 15-character password length"
+      tags: [SV-258107, medium]
+      block:
+        - name: Set minlen in pwquality.conf
+          ansible.builtin.lineinfile:
+            path: /etc/security/pwquality.conf
+            regexp: '^#?\s*minlen'
+            line: 'minlen = 15'
+
+    - name: "SV-25811 - Prevent use of dictionary words for passwords"
+      tags: [SV-25811, medium]
+      block:
+        - name: Set dictcheck in pwquality.conf
+          ansible.builtin.lineinfile:
+            path: /etc/security/pwquality.conf
+            regexp: '^#?\s*dictcheck'
+            line: 'dictcheck = 1'
+
+    - name: "SV-258111 - Require at least one uppercase character in passwords"
+      tags: [SV-258111, medium]
+      block:
+        - name: Set ucredit in pwquality.conf
+          ansible.builtin.lineinfile:
+            path: /etc/security/pwquality.conf
+            regexp: '^#?\s*ucredit'
+            line: 'ucredit = -1'
+
+    - name: "SV-258121 - Configure CAC smart card driver"
+      tags: [SV-258121, medium]
+      block:
+        - name: Install opensc and pcsc-lite packages
+          ansible.builtin.dnf:
+            name:
+              - opensc
+              - pcsc-lite
+            state: present
+
+        - name: Enable and start pcscd
+          ansible.builtin.systemd:
+            name: pcscd
+            enabled: true
+            state: started
+
+        - name: Set cac as the default card driver
+          ansible.builtin.command:
+            cmd: opensc-tool --set-conf-entry app:default:card_drivers:cac
+          register: opensc_result
+          changed_when: opensc_result.rc == 0
+
+        - name: Restart pcscd to apply smart card config
+          ansible.builtin.systemd:
+            name: pcscd
+            state: restarted
+
+    - name: "SV-258137 - Protect integrity of audit tools with AIDE"
+      tags: [SV-258137, medium]
+      block:
+        - name: Install aide package
+          ansible.builtin.dnf:
+            name: aide
+            state: present
+
+        - name: Add audit tool integrity checks to aide.conf
+          ansible.builtin.lineinfile:
+            path: /etc/aide.conf
+            line: "{{ item }}"
+          loop:
+            - '/usr/sbin/auditctl p+i+n+u+g+s+b+acl+xattrs+sha512'
+            - '/usr/sbin/auditd p+i+n+u+g+s+b+acl+xattrs+sha512'
+            - '/usr/sbin/ausearch p+i+n+u+g+s+b+acl+xattrs+sha512'
+            - '/usr/sbin/aureport p+i+n+u+g+s+b+acl+xattrs+sha512'
+            - '/usr/sbin/autrace p+i+n+u+g+s+b+acl+xattrs+sha512'
+            - '/usr/sbin/augenrules p+i+n+u+g+s+b+acl+xattrs+sha512'
+
+    - name: "SV-258181 - Audit all uses of the chacl command"
+      tags: [SV-258181, medium]
+      block:
+        - name: Add chacl audit rule
+          ansible.builtin.lineinfile:
+            path: /etc/audit/rules.d/audit.rules
+            line: '-a always,exit -F path=/usr/bin/chacl -F perm=x -F auid>=1000 -F auid!=unset -k perm_mod'
+            create: true
+            mode: '0640'
+
+        - name: Load audit rules into kernel
+          ansible.builtin.command:
+            cmd: augenrules --load
+          changed_when: true
+
+    - name: "SV-258209 - Audit all uses of the usermod command"
+      tags: [SV-258209, medium]
+      block:
+        - name: Add usermod audit rule
+          ansible.builtin.lineinfile:
+            path: /etc/audit/rules.d/audit.rules
+            line: '-a always,exit -F path=/usr/sbin/usermod -F perm=x -F auid>=1000 -F auid!=unset -k privileged-usermod'
+            create: true
+            mode: '0640'
+
+        - name: Load audit rules into kernel
+          ansible.builtin.command:
+            cmd: augenrules --load
+          changed_when: true
+
     # - name: <what this task does and which STIG finding it clears>
     #   <module>:
     #     ...
+
+  handlers:
+    - name: reload systemd daemon
+      ansible.builtin.systemd:
+        daemon_reload: true
+
+    - name: restart firewalld
+      ansible.builtin.systemd:
+        name: firewalld
+        state: restarted

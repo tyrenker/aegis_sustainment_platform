@@ -47,8 +47,8 @@ piece — never before.
 
 - [X] Phase 0 — Tooling & AWS account setup
 - [X] Phase 1 — Foundation: VPC, IAM, NIST control mapping
-- [ ] Phase 2 — STIG-hardened AMI (Packer + Ansible) — *in progress*
-- [ ] Phase 3 — EKS cluster, CIS hardening, Gatekeeper policies
+- [X] Phase 2 — STIG-hardened AMI (Packer + Ansible)
+- [ ] Phase 3 — EKS cluster, CIS hardening, Gatekeeper policies - *in progress*
 - [ ] Phase 4 — GitOps (ArgoCD)
 - [ ] Phase 5 — CI/CD DevSecOps gates
 - [ ] Phase 6 — Zero Trust identity (SPIRE)
